@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>model_nachschauen</title>
+	<meta charset="utf-8">
+	<!-- Compiled w/ P5LIVE, http://github.com/ffd8/p5live -->
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/p5.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/p5@1.0.0/lib/addons/p5.sound.min.js"></script>
+	<style type="text/css">
+		body{
+			margin:0;
+			overflow:hidden;
+		}
+		canvas{
+			position:fixed;
+			top:0;
+			left:0;
+			z-index:-1;
+			width:100vw;
+			height:100vh;
+			margin:0;
+		}
+	</style>
+	<script type="text/javascript">
+		// eco-mode = only render if window focused
+		window.onblur = function () {
+			noLoop();
+		};
+		window.onfocus = function () {
+			loop();
+		};
+	</script>
+<script type="text/javascript">
+//model_nachschauen
+
+/* CUSTOM FUNCTIONS FOR P5LIVE */
+// keep fullscreen if window resized
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+// custom ease function
+function ease(iVal, oVal, eVal){
+	return oVal += (iVal - oVal) * eVal;
+}
+
+// processing compatibility
+function println(msg){
+	print(msg);
+}
+
+
+function preload() {
+	// obj = loadModel("data/objects/test2_3d.obj") //where to find the object
+	obj1 = loadModel("data/objects/Spires_of_Contribution_3d_part1.obj")
+	obj2 = loadModel("data/objects/Spires_of_Contribution_3d_part2.obj")
+	obj3 = loadModel("data/objects/Spires_of_Contribution_3d_part3.obj")
+
+	//angleMode(DEGREES) // avoid need for radians()
+}
+
+
+function setup() {
+	createCanvas(windowWidth, windowHeight, WEBGL);
+	ortho(-width / 2, width / 2, height / 2, -height / 2, 0);
+	setupAudio();
+}
+
+function draw() {
+	/* audio vars: amp, ampEase, fft, waveform */
+	updateAudio();
+	background(150);
+
+	if(mouseIsPressed) {
+		this.rotateY((this.mouseX - this.width / 2) / (this.width / 2));
+		this.rotateX((this.mouseY - this.height / 2) / (this.width / 2));
+		normalMaterial(250);
+	} else {
+		specularMaterial(250);
+	}
+
+
+	scale(1);
+
+	model(obj1);
+
+	push()
+	
+	translate(0, 0, -400)
+	model(obj2);
+	pop()
+
+	push()
+	translate(0, 0, -100)
+	model(obj3);
+	pop()
+
+
+
+}
+
+/* AUDIO INIT */
+let mic, fftRaw, fft = [],
+	waveform = [],
+	amp = 0.0,
+	ampStereo = {
+		l: 0.0,
+		r: 0.0
+	},
+	ampEase = 0.0,
+	numBins = 512,
+	bands = 12;
+
+function setupAudio() {
+	userStartAudio();
+	mic = new p5.AudioIn();
+	mic.start();
+	fftRaw = new p5.FFT(0.75, numBins);
+	fftRaw.setInput(mic);
+}
+
+function updateAudio() {
+	fftRaw.analyze();
+	amp = mic.getLevel() * 1000; // average mixed amplitude
+	ampStereo.l = mic.amplitude.getLevel(0) * 500; // average left amplitude
+	ampStereo.r = mic.amplitude.getLevel(1) * 500; // average right amplitude
+	ampEase = ease(amp, ampEase, 0.075); // smooth 'amp'
+	waveform = fftRaw.waveform(); // array (-1, 1)
+	fft = fftRaw.logAverages(fftRaw.getOctaveBands(bands)); // array (0, 255)
+}</script>
+
+</head>
+<body>
+
+</body>
+</html>
